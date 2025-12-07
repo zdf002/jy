@@ -1,0 +1,66 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # 当推送类似 v1.0.0 的标签时触发
+
+env:
+  PROJECT_NAME: "updater"
+
+jobs:
+  build-windows:
+    name: Build for Windows
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0  # 获取所有历史，用于版本号
+
+    - name: Setup Python (如果使用Python)
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Build application
+      run: |
+        # === 这里是你的构建脚本 ===
+        # 示例：创建简单的Windows可执行文件
+        
+        # 1. 创建构建目录
+        New-Item -ItemType Directory -Force -Path "builds"
+        
+        # 2. 写入版本文件
+        $version = $env:GITHUB_REF -replace 'refs/tags/', ''
+        $version | Out-File -FilePath "builds/version.txt" -Encoding UTF8
+        
+        # 3. 如果是Python项目，打包成exe
+        # pip install pyinstaller
+        # pyinstaller --onefile --windowed --name "${{ env.PROJECT_NAME }}" src/main.py
+        # Copy-Item "dist/*.exe" "builds/" -Force
+        
+        # 4. 如果是其他语言，这里写你的构建命令
+        
+        # 5. 创建更新脚本（可选）
+        Copy-Item "scripts/updater.ps1" "builds/" -Force
+        
+        # 6. 创建更新包
+        Compress-Archive -Path "builds/*" -DestinationPath "builds/${{ env.PROJECT_NAME }}-$version.zip" -Force
+        
+        echo "构建完成！"
+
+    - name: Create Release
+      id: create_release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          builds/${{ env.PROJECT_NAME }}*.exe
+          builds/version.txt
+          builds/${{ env.PROJECT_NAME }}*.zip
+        draft: false
+        prerelease: false
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,19 @@
+# 临时文件
+*.tmp
+*.temp
+*.log
+
+# 构建输出
+/dist/
+/builds/
+*.exe
+*.msi
+
+# 环境
+.env
+venv/
+__pycache__/
+
+# 编辑器
+.vscode/
+.idea/
